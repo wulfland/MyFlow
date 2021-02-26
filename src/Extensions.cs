@@ -5,7 +5,14 @@ namespace ToRomanNumerals
 {
     public static class Extensions
     {
-        // bugfix
+        public static string PubicMember = "Raise an issue...";
+
+        private static void DoSomethingElegal()
+        {
+                string username = "admin";
+                string password = "Admin123"; // Sensitive
+        }
+
         static IDictionary<int, string> factors = 
             new Dictionary<int, string>()
         {
