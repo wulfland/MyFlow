@@ -15,6 +15,7 @@ namespace ToRomanNumeralsTests
         [InlineData(4, "IV")]
         [InlineData(5, "V")]
         [InlineData(6, "VI")]
+        [InlineData(7, "VII")]
         [InlineData(9, "IX")]
         [InlineData(10, "X")]
         [InlineData(11, "XI")]
