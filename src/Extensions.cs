@@ -28,9 +28,9 @@ namespace ToRomanNumerals
             if (i <= 0)
                 return "";
             
-            int closest = factors.Keys.Last(x => x <= i);
+            int close = factors.Keys.Last(x => x <= i);
 
-            return factors[closest] + ToRomanNumerals(i - closest);
+            return factors[closest] + ToRomanNumerals(i - close);
         }
     }
 }
