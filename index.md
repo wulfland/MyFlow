@@ -122,17 +122,61 @@ In our example:
 $ git push origin +users/kaufm/42_new-feature
 ```
 
+The plus before the branch name causes a force push to the specific branch only. If you are not messing with your branch history, you can perform a normal git push without specifying origin and the branch name. If your branches are well protected and you know what you are doing a normal force push might be more convenient:
+
+```console
+$ git push -f
+```
+
+If you want help or opinions of your teammates on your code at that stage, you can mention them in comments in the pull request. If they want to propose changes, they use the [suggestions feature](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/incorporating-feedback-in-your-pull-request) in pull request comments. This way you apply the changes, and you can make sure that you have a clean state in your repository before doing so.
+
+Whenever you feel your work is ready, you change the state of your pull request from draft to ready and activate auto-merge:
+
+```console
+$ gh pr ready
+$ gh pr merge --auto --delete-branch --rebase
+```
+
+I’ve specified `--rebase` here as the merge method. This is a good merge strategy for small teams that like to craft a good and concise commit history but still want it to be linear. If you prefer `--squash` or `--merge` adjust your merge strategy accordingly. Squash is good for bigger teams or teams that are not used to craft very concise commit messages. Merge is only good for small teams with only short-lived branches that want to keep their branches visible in the history.
+
+Your reviewers can still create suggestions in their comments, and you can keep collaborating. But once all approvals and all automated checks have completed, the pull request will be merged automatically, and the branch gets deleted. The automated checks run on the pull_request trigger and can include installing the application in an isolated environment and running all sorts of tests.
+
+If your pull request has been merged and the branch has been deleted, you clean up your local environment:
+
+```console
+$ git switch main
+$ git pull --prune
+```
+
+This will change your current branch to main, pull the changes from the server, and delete the local branches that has been deleted on the server.
+
+## Releasing
 
 ![B17827_11_006](https://user-images.githubusercontent.com/5276337/146935884-2b9c6a11-3060-46ed-bb5b-8fc7bdce687a.png)
 
+Once your changes have been merged to main, the push trigger on main will start the CI build and the deployment to production. Independent whether you use staged environments or a ring-based approach for your releases. If you release your software as a service – like a web application, mobile app, or a cloud service – then your are done here. If your release fails at some point your fix the issue in a new topic branch and roll forward.
 
+But, if you have to maintain multiple versions in the wild and provide hotfixes for them, you can use tags together with [semantic versioning](https://semver.org/) and GitHub releases.
 
+### About semantic versioning
 
+**Semantic versioning** is a formal convention for specifying version numbers for software. It consists of different parts in the version number with different meanings. Examples for semantic version numbers are 1.0.0 or 1.5.99-beta. The format is:
 
+`<major>.<minor>.<patch>-<pre>`
 
+**Major version**: A numeric identifier that gets increased if the version is not backwards compatible and has breaking changes. An update to a new major version must be handled with caution! A major version of zero is for the initial development.
 
+**Minor version**: A numeric identifier that gets increased if new features are added and the version is backward compatible to the previous version – meaning it can be updated without breaking anything if you want the new functionality.
 
+**Patch**: A numeric identifier that gets increased if bugfixes get released that are backwards compatible to previous versions. New patches should always be installed.
 
+**Pre version**: A text identifier that is appended using a hyphen. The identifier must only use ASCII alphanumeric characters and hyphens ([0-9A-Za-z-]).  The longer the text, the smaller the pre-version (meaning -alpha < -beta < -rc). A pre-release version is always smaller than a normal version (1.0.0-alpha < 1.0.0).
+
+See [https://semver.org/](https://semver.org/) for the complete specification.
+
+> You can use the [Conventional Commits](https://www.conventionalcommits.org/) specification to provide information in your commit messages what kind of change the commit contains. This way you can use [GitVersion](https://gitversion.net/docs/) to automatically create semantic versions of your commit using [a special configuration](https://gitversion.net/docs/reference/version-increments). 
+
+### Create your release
 
 
 
