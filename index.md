@@ -56,4 +56,83 @@ $ git switch -c users/kaufm/42_my-new-feature main
 > Switched to new branch 'users/kaufm/42_my-new-feature main'
 ```
 
+Create your first modifications and commit and push them to the server. It does not matter what you modify – you could just add a blank line to a file. You can overwrite the change later anyway. Add, commit, and push the change:
+
+```console
+$ git add .
+$ git commit
+$ git push --set-upstream origin <branch-name>
+```
+
+For example:
+
+```console
+$ git add .
+$ git commit -m "New feature #42"
+$ git push --set-upstream origin users/kaufm/42_new-feature
+```
+Note that I did not specify the `-m` parameter in git commit to specify the commit message. I prefer that my default editor opens the `COMMIT_EDITMSG` so that I can edit the commit message there. This way I can see the files with changes and I have a visual help where the lines should break. Make sure you have set your editor correct if you want to do this. If, for example, you prefer visual studio code, you can set it as your default editor with:  `$ git config --global core.editor "code --wait"`.
+
+<img width="906" alt="2021-12-03_20-23-04" src="https://user-images.githubusercontent.com/5276337/146937583-be3f33f8-54a2-49cd-9975-94ca597393d9.png">
+
+Now you create a pull request in draft mode. This way the team knows that you are working on that specific topic. A quick view on the list of open pull requests should give you a nice overview on the topics the team is currently working on.
+
+> Note that I use the [GitHub CLI](https://cli.github.com/) to interact with pull requests as I find it easier to read and understand than to use screenshots of the web UI. You can do the same using the web UI.
+
+```console
+$ gh pr create --fill --draft
+```
+
+The option `--fill` will automatically set the title and description of the pr from your commit. If you have omitted the `-m` argument when committing your changes and if you have added a multi-line commit message in your default editor, the first line will be the title of the pull request and the rest of the message the body. You could also set title (`--title` or `-t`) and body (`--body` or `-b`) directly when creating the pull request instead of using the `--fill` option.
+
+You can now start working on your topic. And you can use the full power of git. If you want to add changes to your previous commit, for example, you can do so with the `--amend` option:
+
+```console
+$ git commit --amend
+```
+
+Or, if you want to combine the last three commits into one single commit:
+
+```console
+$ git reset --soft HEAD~3
+$ git commit
+```
+If you want to merge all the commits in the branch into one commit you could run the following command:
+
+```console
+$ git reset --soft main
+$ git commit
+```
+
+If you want complete freedom to rearrange and squash all your commits you can use interactive rebase:
+
+```console
+$ git rebase -i main
+```
+
+To push the changes to the server you use the following command:
+
+```console
+$ git push origin +<branch>
+```
+
+In our example:
+
+```console
+$ git push origin +users/kaufm/42_new-feature
+```
+
+
 ![B17827_11_006](https://user-images.githubusercontent.com/5276337/146935884-2b9c6a11-3060-46ed-bb5b-8fc7bdce687a.png)
+
+
+
+
+
+
+
+
+
+
+
+
