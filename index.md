@@ -1,5 +1,7 @@
 ## MyFlow: A successful git branching model for DevOps teams
 
+> This post was first published on [writeabout.net](https://writeabout.net/2021/12/21/myflow-a-successful-git-branching-model-for-devops-teams/). Feel free to provide feedback or contribute here on [GitHub](https://github.com/wulfland/MyFlow).
+
 The most popular workflow for git is still [git-flow](https://nvie.com/posts/a-successful-git-branching-model). I did a poll on Twitch with a friend some time ago and still over 50% of the audience said they were using it. And this is strange, because even [Vincent Driessen](https://nvie.com/about/), the author of the original post about git-flow, wrote a note in March 2020 in the post that git-flow is not the best workflow for cloud services, apps, or web applications. So why is it still so popular? I think there are three reasons:
 
 1. It’s very detailed, specific, and it provides guidance for people that are new to git.
