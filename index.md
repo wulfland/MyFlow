@@ -152,8 +152,6 @@ This will change your current branch to main, pull the changes from the server, 
 
 ## Releasing
 
-![B17827_11_006](https://user-images.githubusercontent.com/5276337/146935884-2b9c6a11-3060-46ed-bb5b-8fc7bdce687a.png)
-
 Once your changes have been merged to main, the push trigger on main will start the CI build and the deployment to production. Independent whether you use staged environments or a ring-based approach for your releases. If you release your software as a service – like a web application, mobile app, or a cloud service – then your are done here. If your release fails at some point your fix the issue in a new topic branch and roll forward.
 
 But, if you have to maintain multiple versions in the wild and provide hotfixes for them, you can use tags together with [semantic versioning](https://semver.org/) and GitHub releases.
@@ -178,5 +176,168 @@ See [https://semver.org/](https://semver.org/) for the complete specification.
 
 ### Create your release
 
+Create a release with the tag containing your semantic version and release notes:
 
+```console
+$ gh release create <tag> --notes "<release notes>"
+```
 
+For example:
+
+```console
+$ gh release create v1.1 --notes "Added new feature"
+```
+
+If you use the UI to create the release you can [automatically generate release notes](https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes) from your commit messages. This is not available from the CLI yet.
+
+<img width="855" alt="136526942-2b6ebb28-bbe8-46df-84b3-ba02f76cbeb1" src="https://user-images.githubusercontent.com/5276337/146941015-93c83280-18b3-4d50-86da-d318ce016f3c.png">
+
+Use the release trigger in a workflow to release the application:
+
+```yaml
+on:
+  release:
+    types: [created]
+```
+
+You can use [GitVersion](https://gitversion.net/docs/) to automatically generate version numbers from your tag and bump them in the build. Note that you have to perform a shallow clone (`fetch-depth: 0`) for this to work:
+
+```yaml
+- uses: actions/checkout@v2
+  with:
+    fetch-depth: 0
+ 
+- name: Install GitVersion
+  uses: gittools/actions/gitversion/setup@v0.9.7
+  with:
+    versionSpec: '5.x'
+           
+- name: Determine Version
+  id:   gitversion
+  uses: gittools/actions/gitversion/execute@v0.9.7
+```
+
+The calculated final semantic version number is stored as the environment variable $GITVERSION_SEMVER. You could use it like this:
+
+```yaml
+- name: 'Change NPM version'
+  uses: reedyuk/npm-version@1.1.1
+  with:
+    version: $GITVERSION_SEMVER
+```
+
+You can find a complete example of a release workflow [here](https://github.com/wulfland/package-demo/blob/main/.github/workflows/release-package.yml).
+
+### Hotfix
+
+If you have to provide a hotfix for an older release, you create a new hotfix branch based on the tag of the release:
+
+```console
+$ git switch -c <hotfix-branch> <tag>
+$ git push --set-upstream origin <branch>
+```
+
+For example:
+
+```console
+$ git switch -c hotfix/v1.1.1 v1.1
+$ git push --set-upstream origin hotfix/v1.1.1
+```
+
+Now switch back to main and fix the bug in a normal, private topic branch (for example `users/kaufm/666_fix-bug`). We fix bugs using the **upstream first** principle. If you’re finished, cherry-pick the commit with the fix to the hotfix branch:
+
+```console
+$ git switch <hotfix-branch>
+$ git cherry-pick <commit SHA>
+$ git push
+```
+
+You can use the SHA of the commit you want to cherry-pick or use the name of the branch, if the commit is the tip of the branch:
+
+```console
+$ git switch hotfix/v1.1.1
+$ git cherry-pick users/kaufm/666_fix-bug
+$ git push
+```
+This will cherry-pick the tip of the topic branch. Here you can see the process of performing hotfixes upstream first:
+
+![B17827_11_006](https://user-images.githubusercontent.com/5276337/146935884-2b9c6a11-3060-46ed-bb5b-8fc7bdce687a.png)
+
+You could also merge the fix to main first and then cherry pick the commit from there. This ensures that the code adheres to all your branch policies.
+
+And you could also cherry-pick into a temporary branch based on the hotfix branch and merge the cherry-picked fix using another pull request. This depends on how complex your environment is and how big the differences between the main branch and the hotfix branch are.
+
+Adjust the workflow to your needs here.
+
+## Automation
+
+If you have a workflow with naming conventions, there are certain sequences of commands that you use very often. To reduce typos and simplify your workflow, you can automate these using git aliases. The best way to do this is to edit your `.gitconfig` in the editor of your choice:
+
+```console
+$ git config --global --edit
+```
+
+Add a section `[alias]` if it does not exist yet and add an alias like this:
+
+```
+[alias]
+    mfstart = "!f() { \
+        git switch -c users/$1/$2_$3 && \
+        git commit && \
+        git push --set-upstream origin users/$1/$2_$3 && \
+        gh pr create --fill --draft; \
+    };f"
+```
+
+This alias is called `mfstart` and would be called specifying the username, issue id, and topic:
+
+```console
+$ git mfstart kaufm 42 new-feature
+```
+
+It switches to a new branch and commits the current changes in the index, pushes them to the server and creates a pull request.
+
+You can reference individual arguments (`$1`, `$2`, …) or all arguments using `$@`. If you want to chain commands independent of the exit code, you must terminate a command using a semicolon ;. If you want the next command to only execute if the previous one was successful, you can use && to chain the commands. Note that you have to end each line with the backslash `\`. This is also the character you use to escape quotation marks.
+
+You can add if statements to branch your logic:
+
+```
+mfrelease = "!f() { \
+    if [[ -z \"$1\" ]]; then \
+        echo Please specify a name for the tag; \
+    else \
+        gh release create $1 --notes $2; \
+    fi; \
+};f"
+```
+
+Or, you can store values in variables to use them later – like in this example the current name of the branch your HEAD points to:
+
+```
+mfhotfix = "!f() { \
+    head=$(git symbolic-ref HEAD --short); \
+    echo Cherry-pick $head onto hotfix/$1 && \
+    git switch -c hotfix/$1 && \
+    git push --set-upstream origin hotfix/$1 && \
+    git cherry-pick $head && \
+    git push; \
+};f"
+```
+
+These are just examples, and the automation depends a lot on the details of the way you work. But it is a very powerful tool and can help you to get more productive.
+
+## Conclusion
+
+The perfect git workflow for your team depends on many things:
+
+- The number of developers working on one product
+- The complexity of the product
+- If you use a mono repo approach or if you use multiple repos per product
+- The experience with git your developers have
+- Your git service (GitHub, GitLab, Bitbucket,…)
+- How you release your product
+- And so on
+
+There is no one-size-fits-all solution. But teams need some kind of guidance, either if they are new to git or change the platform. Or, if they have an old workflow that needs to be adopted to a new release process or git system.
+
+I hope MyFlow is a good starting point for many teams. But don’t forget to adopt the workflow to your needs!
